@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Discovery Challenge | Fred Anderson Toyota</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  :root {
+    --bg: #f5f5f5; --surface: #ffffff; --surface2: #eee; --border: #e0e0e0;
+    --accent: #c8102e; --accent-light: rgba(200,16,46,0.08); --accent-glow: rgba(200,16,46,0.15);
+    --green: #2e7d32; --green-bg: rgba(46,125,50,0.08);
+    --timer-green: #16a34a; --timer-yellow: #ca8a04; --timer-red: #ef4444;
+    --text: #1a1a1a; --text-dim: #2d2d2d; --text-muted: #888; --placeholder: #999; --radius: 12px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); min-height:100dvh; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+
+  .splash { min-height:100dvh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center; animation:fadeIn .6s ease; }
+  .splash-logo { height:48px; margin-bottom:24px; }
+  .splash h1 { font-size:30px; font-weight:900; margin-bottom:8px; color:var(--accent); }
+  .splash .tagline { color:var(--text-muted); font-size:15px; margin-bottom:36px; line-height:1.5; }
+  .splash .rules { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:28px; text-align:left; width:100%; max-width:400px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  .splash .rules h3 { font-size:13px; text-transform:uppercase; letter-spacing:1px; color:var(--accent); margin-bottom:14px; font-weight:700; }
+  .splash .rule-item { display:flex; gap:12px; align-items:flex-start; margin-bottom:12px; font-size:14px; color:var(--text-dim); line-height:1.5; }
+  .splash .rule-item:last-child { margin-bottom:0; }
+  .splash .rule-icon { font-size:18px; flex-shrink:0; margin-top:1px; }
+  .name-input-group { width:100%; max-width:400px; margin-bottom:20px; }
+  .name-input-group label { display:block; font-size:13px; font-weight:600; color:var(--text-dim); margin-bottom:8px; text-transform:uppercase; letter-spacing:.5px; }
+  .name-input-group input { width:100%; padding:14px 16px; background:var(--surface); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:16px; font-family:inherit; outline:none; transition:border-color .2s; box-shadow:0 1px 3px rgba(0,0,0,.04); }
+  .name-input-group input:focus { border-color:var(--accent); }
+  .btn-start { width:100%; max-width:400px; padding:16px; background:var(--accent); border:none; border-radius:8px; color:white; font-size:17px; font-weight:700; font-family:inherit; cursor:pointer; transition:transform .15s; box-shadow:0 2px 8px var(--accent-glow); }
+  .btn-start:active { transform:scale(.97); }
+  .btn-start:disabled { opacity:.4; cursor:not-allowed; }
+
+  .game-header { position:sticky; top:0; z-index:100; background:rgba(255,255,255,.95); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); padding:12px 16px; }
+  .header-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .score-display { display:flex; align-items:center; gap:8px; }
+  .score-number { font-size:28px; font-weight:900; color:var(--accent); transition:transform .3s; }
+  .score-number.bump { animation:scoreBump .4s ease; }
+  .score-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
+  .timer-display { text-align:right; }
+  .timer-number { font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; transition:color .5s; }
+  .timer-msg { font-size:11px; font-weight:600; transition:color .5s; }
+  .timer-green { color:var(--timer-green); }
+  .timer-yellow { color:var(--timer-yellow); }
+  .timer-red { color:var(--timer-red); }
+  .progress-bar { height:3px; background:var(--surface2); border-radius:2px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .5s ease; }
+  .quote-banner { background:var(--accent); color:white; text-align:center; padding:10px 16px; font-size:13px; font-style:italic; font-weight:500; }
+
+  .game-body { padding:16px 16px 120px; max-width:600px; margin:0 auto; }
+  .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px 16px; margin-bottom:16px; transition:border-color .3s; box-shadow:0 1px 4px rgba(0,0,0,.05); }
+  .section.has-points { border-color:rgba(46,125,50,.3); }
+  .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .section-title { font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px; }
+  .section-icon { width:28px; height:28px; background:var(--accent); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:14px; color:white; flex-shrink:0; }
+  .section-points { font-size:13px; font-weight:700; color:var(--green); background:var(--green-bg); padding:4px 10px; border-radius:20px; opacity:0; transition:opacity .3s; }
+  .section-points.visible { opacity:1; }
+  .section-subtitle { font-size:13px; color:var(--text-muted); font-style:italic; margin-bottom:14px; margin-top:-8px; }
+
+  .field { margin-bottom:16px; }
+  .field:last-child { margin-bottom:0; }
+  .field label { display:block; font-size:13px; font-weight:700; color:var(--text-dim); margin-bottom:6px; }
+  .field .bonus-hint { font-size:11px; color:var(--text-muted); font-weight:500; margin-left:4px; }
+  .field input,.field textarea { width:100%; padding:12px 14px; background:var(--surface); border:1px solid #ddd; border-radius:8px; color:var(--text); font-size:15px; font-family:inherit; outline:none; transition:border-color .2s,box-shadow .2s; resize:none; }
+  .field input::placeholder,.field textarea::placeholder { color:var(--placeholder); }
+  .field input:focus,.field textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
+  .field textarea { min-height:70px; }
+  .field-row { display:flex; gap:10px; }
+  .field-row .field { flex:1; }
+  .point-indicator { display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:700; color:var(--green); margin-top:4px; opacity:0; transform:translateY(-4px); transition:opacity .3s,transform .3s; }
+  .point-indicator.show { opacity:1; transform:translateY(0); }
+
+  .tags-grid { display:flex; flex-wrap:wrap; gap:8px; }
+  .tag-btn { padding:10px 16px; background:var(--surface); border:1px solid var(--border); border-radius:8px; color:#666; font-size:13px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .2s; user-select:none; }
+  .tag-btn.selected { background:var(--accent-light); border-color:var(--accent); color:var(--accent); }
+  .tag-btn:active { transform:scale(.95); }
+
+  .toggle-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border); margin-bottom:16px; }
+  .toggle-label { font-size:14px; font-weight:600; }
+  .toggle-switch { width:48px; height:28px; background:#ccc; border-radius:14px; position:relative; cursor:pointer; transition:background .3s; }
+  .toggle-switch.on { background:var(--accent); }
+  .toggle-switch::after { content:''; position:absolute; top:3px; left:3px; width:22px; height:22px; background:white; border-radius:50%; transition:transform .3s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+  .toggle-switch.on::after { transform:translateX(20px); }
+
+  .submit-bar { position:fixed; bottom:0; left:0; right:0; padding:16px; background:rgba(255,255,255,.95); backdrop-filter:blur(12px); border-top:1px solid var(--border); z-index:100; }
+  .btn-submit { width:100%; max-width:600px; margin:0 auto; display:block; padding:16px; background:var(--accent); border:none; border-radius:8px; color:white; font-size:17px; font-weight:800; font-family:inherit; cursor:pointer; transition:transform .15s; box-shadow:0 2px 10px var(--accent-glow); }
+  .btn-submit:active { transform:scale(.97); }
+
+  .results { min-height:100dvh; display:none; flex-direction:column; align-items:center; padding:40px 20px; text-align:center; background:var(--bg); }
+  .results.show { display:flex; }
+  .results-score-circle { width:160px; height:160px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:24px; background:conic-gradient(var(--accent) calc(var(--pct)*1%),var(--surface2) 0%); position:relative; }
+  .results-score-inner { width:130px; height:130px; border-radius:50%; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .results-score-num { font-size:48px; font-weight:900; color:var(--accent); }
+  .results-score-max { font-size:14px; color:var(--text-muted); }
+  .results-rank { font-size:20px; font-weight:800; margin-bottom:6px; }
+  .results-time { font-size:14px; color:var(--text-muted); margin-bottom:32px; }
+  .breakdown { width:100%; max-width:450px; text-align:left; }
+  .breakdown h3 { font-size:13px; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:12px; }
+  .breakdown-item { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:var(--surface); border-radius:10px; margin-bottom:8px; border:1px solid var(--border); }
+  .breakdown-label { font-size:14px; font-weight:500; }
+  .breakdown-pts { font-size:14px; font-weight:700; color:var(--green); }
+  .breakdown-pts.zero { color:var(--text-muted); }
+  .bonus-section { margin-top:20px; padding-top:16px; border-top:1px solid var(--border); }
+  .bonus-section h3 { color:var(--accent); }
+  .results-buttons { display:flex; gap:10px; margin-top:32px; flex-wrap:wrap; justify-content:center; }
+  .btn-restart { padding:14px 40px; background:var(--surface); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:15px; font-weight:600; font-family:inherit; cursor:pointer; }
+  .btn-copy { padding:14px 40px; background:var(--accent); color:white; border:none; border-radius:8px; font-size:15px; font-weight:600; font-family:inherit; cursor:pointer; transition:transform .15s; }
+  .btn-copy:active { transform:scale(.97); }
+
+  /* LEADERBOARD STYLES */
+  .leaderboard { min-height:100dvh; display:none; flex-direction:column; padding:40px 20px; background:var(--bg); }
+  .leaderboard.show { display:flex; }
+  .leaderboard-header { text-align:center; margin-bottom:40px; }
+  .leaderboard-header img { height:50px; margin-bottom:20px; }
+  .leaderboard-header h1 { font-size:36px; font-weight:900; color:var(--accent); margin-bottom:8px; }
+  .leaderboard-header p { font-size:16px; color:var(--text-muted); }
+  .leaderboard-content { max-width:600px; margin:0 auto; width:100%; }
+  .leaderboard-add { margin-bottom:30px; display:flex; gap:10px; }
+  .leaderboard-add input { flex:1; padding:12px 14px; border:1px solid var(--border); border-radius:8px; font-size:15px; font-family:inherit; }
+  .leaderboard-add input:focus { outline:none; border-color:var(--accent); }
+  .btn-add-score { padding:12px 24px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:600; font-family:inherit; cursor:pointer; white-space:nowrap; }
+  .leaderboard-list { }
+  .leaderboard-row { display:flex; align-items:center; padding:16px; background:var(--surface); border-radius:10px; margin-bottom:10px; border:1px solid var(--border); animation:slideIn .4s ease; }
+  .leaderboard-rank { font-size:24px; font-weight:900; min-width:50px; }
+  .leaderboard-rank.gold { color:#ffd700; }
+  .leaderboard-rank.silver { color:#c0c0c0; }
+  .leaderboard-rank.bronze { color:#cd7f32; }
+  .leaderboard-info { flex:1; text-align:left; margin:0 20px; }
+  .leaderboard-name { font-size:16px; font-weight:700; color:var(--text); }
+  .leaderboard-score { font-size:20px; font-weight:900; color:var(--accent); }
+  .leaderboard-title { font-size:13px; color:var(--text-muted); margin-top:4px; }
+  .leaderboard-empty { text-align:center; padding:40px 20px; color:var(--text-muted); }
+  .leaderboard-controls { display:flex; gap:10px; justify-content:center; margin-top:30px; }
+  .qr-section { text-align:center; margin-bottom:36px; padding:28px 20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:0 2px 10px rgba(0,0,0,.06); }
+  .qr-section h2 { font-size:20px; font-weight:800; color:var(--accent); margin-bottom:4px; }
+  .qr-section .qr-subtitle { font-size:14px; color:var(--text-muted); margin-bottom:20px; }
+  .qr-canvas { display:inline-block; padding:16px; background:white; border-radius:12px; border:3px solid var(--accent); box-shadow:0 4px 20px var(--accent-glow); }
+  .qr-url { margin-top:14px; font-size:13px; color:var(--text-muted); word-break:break-all; font-family:monospace; }
+  .btn-clear { padding:12px 24px; background:var(--surface2); color:var(--text); border:none; border-radius:8px; font-weight:600; font-family:inherit; cursor:pointer; }
+
+  .float-point { position:fixed; font-size:18px; font-weight:800; color:var(--green); pointer-events:none; z-index:200; animation:floatUp 1.2s ease-out forwards; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes scoreBump { 0%{transform:scale(1)} 50%{transform:scale(1.3)} 100%{transform:scale(1)} }
+  @keyframes floatUp { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-60px)} }
+  @keyframes slideIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .hidden { display:none !important; }
+  .rank-master { color:var(--accent); }
+  .rank-pro { color:#1565c0; }
+  .rank-solid { color:var(--green); }
+  .rank-rookie { color:#e65100; }
+  .copy-toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--accent); color:white; padding:14px 24px; border-radius:8px; font-weight:600; z-index:300; animation:slideIn .3s ease; }
+  .results-player-name { font-size:28px; font-weight:900; color:var(--accent); margin-bottom:8px; }
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash" class="splash">
+  <img src="https://tccdiscovery.vercel.app/logo.png" alt="Fred Anderson Toyota of Cape Coral" class="splash-logo">
+  <h1>Discovery Challenge</h1>
+  <p class="tagline">How much can you uncover about your customer?<br>Every detail counts.</p>
+  <div class="rules">
+    <h3>How It Works</h3>
+    <div class="rule-item"><span class="rule-icon">👥</span><span>Pair up — one of you is the <strong>customer</strong>, the other is the <strong>salesperson</strong></span></div>
+    <div class="rule-item"><span class="rule-icon">🎤</span><span>The salesperson asks discovery questions and fills out this form based on the conversation</span></div>
+    <div class="rule-item"><span class="rule-icon">⭐</span><span>Earn points for every detail you capture — <strong style="color:var(--accent)">longer answers = bonus points</strong></span></div>
+    <div class="rule-item"><span class="rule-icon">🏆</span><span>Submit when done to see your score and rank</span></div>
+  </div>
+  <div class="name-input-group">
+    <label>Your Name (Salesperson)</label>
+    <input type="text" id="playerName" placeholder="Enter your name" autocomplete="off">
+  </div>
+  <button class="btn-start" id="btnStart" disabled>Start Discovery</button>
+</div>
+
+<!-- GAME -->
+<div id="game" class="hidden">
+  <div class="game-header">
+    <div class="header-top">
+      <div class="score-display">
+        <div>
+          <div class="score-number" id="liveScore">0</div>
+          <div class="score-label">Points</div>
+        </div>
+      </div>
+      <div class="timer-display">
+        <div class="timer-number timer-green" id="timer">0:00</div>
+        <div class="timer-msg timer-green" id="timerMsg">Take your time</div>
+      </div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+  <div class="quote-banner">Customers don't buy vehicles. They buy solutions to problems.</div>
+
+  <div class="game-body">
+
+    <!-- Customer Info -->
+    <div class="section" data-section="customer">
+      <div class="section-header">
+        <div class="section-title"><div class="section-icon">👤</div> Customer Info</div>
+        <div class="section-points" id="pts-customer">+0</div>
+      </div>
+      <div class="field">
+        <label>Customer Name <span class="bonus-hint">(5 pts)</span></label>
+        <input type="text" data-points="5" data-field="customerName" placeholder="First and last name" autocomplete="off">
+        <div class="point-indicator" data-for="customerName">✓ +5</div>
+      </div>
+    </div>
+
+    <!-- Vehicle of Interest -->
+    <div class="section" data-section="vehicle">
+      <div class="section-header">
+        <div class="section-title"><div class="section-icon">🚗</div> Vehicle of Interest</div>
+        <div class="section-points" id="pts-vehicle">+0</div>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;margin-top:-8px;">If they came in on a specific stock number or vehicle, enter it here.</p>
+      <div class="field">
+        <label>Stock # <span class="bonus-hint">(3 pts)</span></label>
+        <input type="text" data-points="3" data-field="stockNum" id="stockNumInput" placeholder="e.g. T24-1234" autocomplete="off">
+        <div class="point-indicator" data-for="stockNum">✓ +3</div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Year <span class="bonus-hint">(3 pts)</span></label>
+          <input type="text" data-points="3" data-field="vehYear" placeholder="2025" autocomplete="off">
+          <div class="point-indicator" data-for="vehYear">✓ +3</div>
+        </div>
+        <div class="field">
+          <label>Make <span class="bonus-hint">(3 pts)</span></label>
+          <input type="text" data-points="3" data-field="vehMake" placeholder="Toyota" autocomplete="off">
+          <div class="point-indicator" data-for="vehMake">✓ +3</div>
+        </div>
+        <div class="field">
+          <label>Model <span class="bonus-hint">(3 pts)</span></label>
+          <input type="text" data-points="3" data-field="vehModel" placeholder="Camry" autocomplete="off">
+          <div class="point-indicator" data-for="vehModel">✓ +3</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Motivation (changes based on stock #) -->
+    <div class="section" data-section="motivation">
+      <div class="section-header">
+        <div class="section-title"><div class="section-icon">💡</div> Motivation</div>
+        <div class="section-points" id="pts-motivation">+0</div>
+      </div>
+      <div id="motivationDefault">
+        <div class="field">
+          <label>What has you looking for a vehicle today? <span class="bonus-hint">(5–15 pts)</span></label>
+          <textarea data-points="5" data-bonus="detail" data-field="motivation" placeholder="What's changed? New job, growing family, reliability issues?" rows="3"></textarea>
+          <div class="point-indicator" data-for="motivation">✓ +5</div>
+        </div>
+      </div>
+      <div id="motivationStock" class="hidden">
+        <div class="field">
+          <label>What drew them to this specific vehicle? <span class="bonus-hint">(5–15 pts)</span></label>
+          <textarea data-points="5" data-bonus="detail" data-field="motivationStock" placeholder="What caught their eye? Online? Drive by? Referred?" rows="3"></textarea>
+          <div class="point-indicator" data-for="motivationStock">✓ +5</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trade-In Section -->
+    <div class="section" data-section="trade">
+      <div class="toggle-row">
+        <span class="toggle-label">Customer has a trade-in</span>
+        <div class="toggle-switch" id="tradeToggle"></div>
+      </div>
+
+      <!-- TRADE ON: Trade Discovery -->
+      <div id="tradeOnFields" class="hidden">
+        <div class="section-header" style="margin-top:4px">
+          <div class="section-title"><div class="section-icon">🔄</div> Trade Discovery</div>
+          <div class="section-points" id="pts-tradeOn">+0</div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Year <span class="bonus-hint">(3)</span></label><input type="text" data-points="3" data-field="tradeYear" placeholder="2019" autocomplete="off"><div class="point-indicator" data-for="tradeYear">✓ +3</div></div>
+          <div class="field"><label>Make <span class="bonus-hint">(3)</span></label><input type="text" data-points="3" data-field="tradeMake" placeholder="Honda" autocomplete="off"><div class="point-indicator" data-for="tradeMake">✓ +3</div></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Model <span class="bonus-hint">(3)</span></label><input type="text" data-points="3" data-field="tradeModel" placeholder="Accord" autocomplete="off"><div class="point-indicator" data-for="tradeModel">✓ +3</div></div>
+          <div class="field"><label>Miles <span class="bonus-hint">(3)</span></label><input type="text" data-points="3" data-field="tradeMiles" placeholder="45,000" autocomplete="off"><div class="point-indicator" data-for="tradeMiles">✓ +3</div></div>
+        </div>
+        <div class="field"><label>What do you LOVE about your current vehicle? <span class="bonus-hint">(5–15)</span></label><textarea data-points="5" data-bonus="detail" data-field="tradeLove" placeholder="Features, comfort, reliability..." rows="2"></textarea><div class="point-indicator" data-for="tradeLove">✓ +5</div></div>
+        <div class="field"><label>What do you WISH was different? <span class="bonus-hint">(5–15)</span></label><textarea data-points="5" data-bonus="detail" data-field="tradeWish" placeholder="Space, tech, fuel economy..." rows="2"></textarea><div class="point-indicator" data-for="tradeWish">✓ +5</div></div>
+        <div class="field"><label>What does the next vehicle NEED to have? <span class="bonus-hint">(5–15)</span></label><textarea data-points="5" data-bonus="detail" data-field="tradeNeed" placeholder="Must-haves from trade experience..." rows="2"></textarea><div class="point-indicator" data-for="tradeNeed">✓ +5</div></div>
+        <div class="field-row">
+          <div class="field"><label>Lender <span class="bonus-hint">(3)</span></label><input type="text" data-points="3" data-field="tradeLender" placeholder="Bank/CU name" autocomplete="off"><div class="point-indicator" data-for="tradeLender">✓ +3</div></div>
+          <div class="field"><label>Balance <span class="bonus-hint">(3)</span></label><input type="text" data-points="3" data-field="tradeBalance" placeholder="$" autocomplete="off"><div class="point-indicator" data-for="tradeBalance">✓ +3</div></div>
+          <div class="field"><label>Payment <span class="bonus-hint">(3)</span></label><input type="text" data-points="3" data-field="tradePayment" placeholder="$/mo" autocomplete="off"><div class="point-indicator" data-for="tradePayment">✓ +3</div></div>
+        </div>
+      </div>
+
+      <!-- TRADE OFF: Recent Vehicle Experience -->
+      <div id="tradeOffFields">
+        <div class="section-header" style="margin-top:4px">
+          <div class="section-title"><div class="section-icon">🚙</div> Recent Vehicle Experience</div>
+          <div class="section-points" id="pts-tradeOff">+0</div>
+        </div>
+        <p class="section-subtitle">No trade — let's learn about what they've been driving.</p>
+        <div class="field"><label>What have you been driving most recently? <span class="bonus-hint">(5 pts)</span></label><input type="text" data-points="5" data-field="recentVehicle" placeholder="Year, Make, Model" autocomplete="off"><div class="point-indicator" data-for="recentVehicle">✓ +5</div></div>
+        <div class="field"><label>What did you like about it? <span class="bonus-hint">(5–15)</span></label><textarea data-points="5" data-bonus="detail" data-field="recentLike" placeholder="Features, ride, reliability..." rows="2"></textarea><div class="point-indicator" data-for="recentLike">✓ +5</div></div>
+        <div class="field"><label>What didn't work for you? <span class="bonus-hint">(5–15)</span></label><textarea data-points="5" data-bonus="detail" data-field="recentDislike" placeholder="Pain points, frustrations..." rows="2"></textarea><div class="point-indicator" data-for="recentDislike">✓ +5</div></div>
+        <div class="field"><label>What was missing that you wish it had? <span class="bonus-hint">(5–15)</span></label><textarea data-points="5" data-bonus="detail" data-field="recentMissing" placeholder="Features, space, technology..." rows="2"></textarea><div class="point-indicator" data-for="recentMissing">✓ +5</div></div>
+      </div>
+    </div>
+
+    <!-- Lifestyle & Needs -->
+    <div class="section" data-section="lifestyle">
+      <div class="section-header">
+        <div class="section-title"><div class="section-icon">🏄</div> Lifestyle & Needs</div>
+        <div class="section-points" id="pts-lifestyle">+0</div>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Tap all that apply <span class="bonus-hint">(3 pts each)</span></p>
+      <div class="tags-grid" id="lifestyleTags">
+        <button class="tag-btn" data-tag="commute">Daily Commute</button>
+        <button class="tag-btn" data-tag="family">Family</button>
+        <button class="tag-btn" data-tag="roadtrips">Road Trips</button>
+        <button class="tag-btn" data-tag="towing">Towing / Hauling</button>
+        <button class="tag-btn" data-tag="offroad">Off-Road</button>
+        <button class="tag-btn" data-tag="safety">Safety First</button>
+        <button class="tag-btn" data-tag="performance">Performance</button>
+        <button class="tag-btn" data-tag="style">Style / Looks</button>
+        <button class="tag-btn" data-tag="tech">Tech & Features</button>
+        <button class="tag-btn" data-tag="fuel">Fuel Economy</button>
+        <button class="tag-btn" data-tag="comfort">Comfort / Space</button>
+        <button class="tag-btn" data-tag="downsize">Downsizing</button>
+      </div>
+    </div>
+
+    <!-- Priorities (changes based on stock #) -->
+    <div class="section" data-section="priorities">
+      <div id="prioritiesDefault">
+        <div class="section-header">
+          <div class="section-title"><div class="section-icon">🎯</div> Next Vehicle Priorities</div>
+          <div class="section-points" id="pts-priorities">+0</div>
+        </div>
+        <div class="field"><label>What are the must-haves for your next vehicle? <span class="bonus-hint">(5–15)</span></label><textarea data-points="5" data-bonus="detail" data-field="mustHaves" placeholder="Features, size, type, brand preferences..." rows="2"></textarea><div class="point-indicator" data-for="mustHaves">✓ +5</div></div>
+        <div class="field"><label>Any other notes? <span class="bonus-hint">(5–15)</span></label><textarea data-points="5" data-bonus="detail" data-field="otherNotes" placeholder="Color preferences, new vs used, specific models..." rows="2"></textarea><div class="point-indicator" data-for="otherNotes">✓ +5</div></div>
+      </div>
+      <div id="prioritiesStock" class="hidden">
+        <div class="section-header">
+          <div class="section-title"><div class="section-icon">🎯</div> What Else Matters</div>
+          <div class="section-points" id="pts-prioritiesStock">+0</div>
+        </div>
+        <p class="section-subtitle">They have a vehicle in mind — confirm fit and uncover any deal-breakers.</p>
+        <div class="field"><label>Beyond this vehicle, what are your absolute must-haves? <span class="bonus-hint">(5–15)</span></label><textarea data-points="5" data-bonus="detail" data-field="stockMustHaves" placeholder="Anything this vehicle MUST have to be the one?" rows="2"></textarea><div class="point-indicator" data-for="stockMustHaves">✓ +5</div></div>
+        <div class="field"><label>Any concerns about this vehicle? <span class="bonus-hint">(5–15)</span></label><textarea data-points="5" data-bonus="detail" data-field="stockConcerns" placeholder="Hesitations, questions, things to address..." rows="2"></textarea><div class="point-indicator" data-for="stockConcerns">✓ +5</div></div>
+      </div>
+    </div>
+
+    <!-- Decision Makers -->
+    <div class="section" data-section="decision">
+      <div class="section-header">
+        <div class="section-title"><div class="section-icon">🤝</div> Decision Makers</div>
+        <div class="section-points" id="pts-decision">+0</div>
+      </div>
+      <div class="field"><label>Who is the primary driver? <span class="bonus-hint">(5 pts)</span></label><input type="text" data-points="5" data-field="primaryDriver" placeholder="Name / relationship" autocomplete="off"><div class="point-indicator" data-for="primaryDriver">✓ +5</div></div>
+      <div class="field"><label>Who else is involved in this decision? <span class="bonus-hint">(5–10)</span></label><textarea data-points="5" data-bonus="detail" data-field="otherDeciders" placeholder="Spouse, parent, friend, mechanic..." rows="2"></textarea><div class="point-indicator" data-for="otherDeciders">✓ +5</div></div>
+    </div>
+
+    <!-- Contact Info -->
+    <div class="section" data-section="contact">
+      <div class="section-header">
+        <div class="section-title"><div class="section-icon">📱</div> Contact Info</div>
+        <div class="section-points" id="pts-contact">+0</div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Phone <span class="bonus-hint">(5 pts)</span></label><input type="tel" data-points="5" data-field="phone" placeholder="(555) 123-4567" autocomplete="off"><div class="point-indicator" data-for="phone">✓ +5</div></div>
+        <div class="field"><label>Email <span class="bonus-hint">(5 pts)</span></label><input type="email" data-points="5" data-field="email" placeholder="email@example.com" autocomplete="off"><div class="point-indicator" data-for="email">✓ +5</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="submit-bar">
+    <button class="btn-submit" id="btnSubmit">🏆 Reveal My Score</button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div id="results" class="results">
+  <img src="https://tccdiscovery.vercel.app/logo.png" alt="Fred Anderson Toyota" style="height:40px;margin-bottom:20px;">
+  <div class="results-player-name" id="resultPlayerName">—</div>
+  <div class="results-score-circle" id="scoreCircle" style="--pct:0">
+    <div class="results-score-inner">
+      <div class="results-score-num" id="finalScore">0</div>
+      <div class="results-score-max">/ <span id="maxPossible">0</span> pts</div>
+    </div>
+  </div>
+  <div class="results-rank" id="rankTitle">—</div>
+  <div class="results-time" id="resultTime">Completed in 0:00</div>
+  <div id="playerBadge" style="font-size:15px;color:var(--text-muted);margin-bottom:24px;"></div>
+  <div class="breakdown" id="breakdown"></div>
+  <div class="results-buttons">
+    <button class="btn-copy" id="btnCopyScore">📋 Copy My Score</button>
+    <button class="btn-restart" id="btnRestart">🔄 Play Again</button>
+  </div>
+</div>
+
+<!-- LEADERBOARD (Facilitator Mode) -->
+<div id="leaderboard" class="leaderboard">
+  <div class="leaderboard-header">
+    <img src="https://tccdiscovery.vercel.app/logo.png" alt="Fred Anderson Toyota">
+    <h1>Discovery Challenge Leaderboard</h1>
+    <p>Live Scoreboard</p>
+  </div>
+  <div class="leaderboard-content">
+    <div class="qr-section" id="qrSection">
+      <h2>Scan to Play!</h2>
+      <p class="qr-subtitle">Open your phone camera and scan the code below</p>
+      <div class="qr-canvas" id="qrCanvas"></div>
+      <div class="qr-url" id="qrUrl"></div>
+    </div>
+    <div class="leaderboard-add">
+      <input type="text" id="leaderboardName" placeholder="Player name" autocomplete="off">
+      <input type="number" id="leaderboardScore" placeholder="Score" autocomplete="off">
+      <button class="btn-add-score" id="btnAddScore">Add Score</button>
+    </div>
+    <div class="leaderboard-list" id="leaderboardList">
+      <div class="leaderboard-empty">No scores yet. Start adding players!</div>
+    </div>
+    <div class="leaderboard-controls">
+      <button class="btn-clear" id="btnClearScores">Clear All</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+let score = 0, startTime = null, timerInterval = null, fieldScores = {}, selectedTags = new Set();
+let tradeOn = false, hasStock = false;
+let elapsedSeconds = 0;
+
+const DETAIL_THRESHOLDS = [
+  { minLen: 80, bonus: 10 },
+  { minLen: 40, bonus: 5 },
+  { minLen: 1, bonus: 0 }
+];
+
+// Fields active in each trade mode
+const TRADE_ON_FIELDS = ['tradeYear','tradeMake','tradeModel','tradeMiles','tradeLove','tradeWish','tradeNeed','tradeLender','tradeBalance','tradePayment'];
+const TRADE_OFF_FIELDS = ['recentVehicle','recentLike','recentDislike','recentMissing'];
+const STOCK_FIELDS = ['motivationStock','stockMustHaves','stockConcerns'];
+const DEFAULT_FIELDS = ['motivation','mustHaves','otherNotes'];
+
+// ── CHECK IF FACILITATOR MODE ──
+const isHostMode = new URLSearchParams(window.location.search).get('host') === 'true';
+if (isHostMode) {
+  document.getElementById('leaderboard').classList.add('show');
+  document.getElementById('splash').classList.add('hidden');
+  document.getElementById('game').classList.add('hidden');
+  document.getElementById('results').classList.add('hidden');
+  initLeaderboard();
+} else {
+  document.getElementById('leaderboard').classList.add('hidden');
+}
+
+// ── SPLASH ──
+const playerNameInput = document.getElementById('playerName');
+const btnStart = document.getElementById('btnStart');
+playerNameInput.addEventListener('input', () => { btnStart.disabled = !playerNameInput.value.trim(); });
+btnStart.addEventListener('click', () => {
+  document.getElementById('splash').classList.add('hidden');
+  document.getElementById('game').classList.remove('hidden');
+  startTime = Date.now();
+  timerInterval = setInterval(updateTimer, 1000);
+  document.querySelector('[data-field="customerName"]')?.focus();
+});
+
+// ── TIMER with color changes ──
+function updateTimer() {
+  elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+  const m = Math.floor(elapsedSeconds / 60);
+  const s = elapsedSeconds % 60;
+  const timerEl = document.getElementById('timer');
+  const msgEl = document.getElementById('timerMsg');
+  timerEl.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+
+  // Color thresholds: green <6min, yellow 6-10min, red >10min
+  timerEl.classList.remove('timer-green','timer-yellow','timer-red');
+  msgEl.classList.remove('timer-green','timer-yellow','timer-red');
+  if (elapsedSeconds < 360) { // < 6 min
+    timerEl.classList.add('timer-green');
+    msgEl.classList.add('timer-green');
+    msgEl.textContent = 'Take your time';
+  } else if (elapsedSeconds < 600) { // 6-10 min
+    timerEl.classList.add('timer-yellow');
+    msgEl.classList.add('timer-yellow');
+    msgEl.textContent = 'Keep going';
+  } else { // > 10 min
+    timerEl.classList.add('timer-red');
+    msgEl.classList.add('timer-red');
+    msgEl.textContent = 'Keep moving';
+  }
+}
+
+// ── STOCK # TOGGLE ──
+document.getElementById('stockNumInput').addEventListener('input', function() {
+  const hadStock = hasStock;
+  hasStock = this.value.trim().length > 0;
+  if (hadStock !== hasStock) {
+    document.getElementById('motivationDefault').classList.toggle('hidden', hasStock);
+    document.getElementById('motivationStock').classList.toggle('hidden', !hasStock);
+    document.getElementById('prioritiesDefault').classList.toggle('hidden', hasStock);
+    document.getElementById('prioritiesStock').classList.toggle('hidden', !hasStock);
+    updateScore();
+  }
+});
+
+// ── TRADE TOGGLE ──
+document.getElementById('tradeToggle').addEventListener('click', function() {
+  tradeOn = !tradeOn;
+  this.classList.toggle('on', tradeOn);
+  document.getElementById('tradeOnFields').classList.toggle('hidden', !tradeOn);
+  document.getElementById('tradeOffFields').classList.toggle('hidden', tradeOn);
+  updateScore();
+});
+
+// ── SCORING ──
+function isFieldActive(field) {
+  if (TRADE_ON_FIELDS.includes(field)) return tradeOn;
+  if (TRADE_OFF_FIELDS.includes(field)) return !tradeOn;
+  if (STOCK_FIELDS.includes(field)) return hasStock;
+  if (field === 'motivation' || field === 'mustHaves' || field === 'otherNotes') return !hasStock;
+  return true;
+}
+
+function calcFieldPoints(el) {
+  const val = el.value.trim();
+  if (!val) return 0;
+  const base = parseInt(el.dataset.points) || 0;
+  if (el.dataset.bonus === 'detail') {
+    for (const t of DETAIL_THRESHOLDS) { if (val.length >= t.minLen) return base + t.bonus; }
+  }
+  return base;
+}
+
+function updateScore() {
+  let total = 0;
+  const sectionTotals = { customer:0, vehicle:0, motivation:0, trade:0, lifestyle:0, priorities:0, decision:0, contact:0 };
+
+  document.querySelectorAll('[data-field]').forEach(el => {
+    const field = el.dataset.field;
+    if (!isFieldActive(field)) { fieldScores[field] = 0; return; }
+    const pts = calcFieldPoints(el);
+    const indicator = document.querySelector(`.point-indicator[data-for="${field}"]`);
+    if (pts > 0) {
+      const base = parseInt(el.dataset.points) || 0;
+      const bonus = pts - base;
+      if (indicator) { indicator.textContent = bonus > 0 ? `✓ +${base} (+${bonus} detail bonus!)` : `✓ +${pts}`; indicator.classList.add('show'); }
+    } else { if (indicator) indicator.classList.remove('show'); }
+    fieldScores[field] = pts;
+    total += pts;
+
+    // Map to section
+    if (['customerName'].includes(field)) sectionTotals.customer += pts;
+    else if (['stockNum','vehYear','vehMake','vehModel'].includes(field)) sectionTotals.vehicle += pts;
+    else if (['motivation','motivationStock'].includes(field)) sectionTotals.motivation += pts;
+    else if (TRADE_ON_FIELDS.includes(field) || TRADE_OFF_FIELDS.includes(field)) sectionTotals.trade += pts;
+    else if (['mustHaves','otherNotes','stockMustHaves','stockConcerns'].includes(field)) sectionTotals.priorities += pts;
+    else if (['primaryDriver','otherDeciders'].includes(field)) sectionTotals.decision += pts;
+    else if (['phone','email'].includes(field)) sectionTotals.contact += pts;
+  });
+
+  const tagPts = selectedTags.size * 3;
+  sectionTotals.lifestyle = tagPts;
+  total += tagPts;
+
+  // Update section badges
+  for (const [sec, pts] of Object.entries(sectionTotals)) {
+    // Try multiple badge IDs for trade section
+    const badgeIds = sec === 'trade' ? (tradeOn ? ['pts-tradeOn'] : ['pts-tradeOff']) : sec === 'priorities' ? (hasStock ? ['pts-prioritiesStock'] : ['pts-priorities']) : [`pts-${sec}`];
+    badgeIds.forEach(id => {
+      const badge = document.getElementById(id);
+      if (badge) { badge.textContent = `+${pts}`; badge.classList.toggle('visible', pts > 0); }
+    });
+    const sectionEl = document.querySelector(`[data-section="${sec}"]`);
+    if (sectionEl) sectionEl.classList.toggle('has-points', pts > 0);
+  }
+
+  const scoreEl = document.getElementById('liveScore');
+  if (total !== score) { scoreEl.classList.remove('bump'); void scoreEl.offsetWidth; scoreEl.classList.add('bump'); }
+  score = total;
+  scoreEl.textContent = total;
+
+  const maxPts = calcMaxPossible();
+  const pct = maxPts > 0 ? Math.min(100, Math.round((total / maxPts) * 100)) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function calcMaxPossible() {
+  let max = 0;
+  document.querySelectorAll('[data-field]').forEach(el => {
+    if (!isFieldActive(el.dataset.field)) return;
+    const base = parseInt(el.dataset.points) || 0;
+    max += el.dataset.bonus === 'detail' ? base + 10 : base;
+  });
+  max += 12 * 3;
+  return max;
+}
+
+// ── TIME BONUS CALCULATION ──
+function calcTimeBonus(elapsedSeconds) {
+  if (elapsedSeconds < 360) return 25; // under 6 min
+  if (elapsedSeconds < 480) return 15; // under 8 min
+  if (elapsedSeconds < 600) return 5; // under 10 min
+  return 0; // over 10 min
+}
+
+// ── EVENTS ──
+document.querySelectorAll('[data-field]').forEach(el => { el.addEventListener('input', updateScore); });
+document.querySelectorAll('.tag-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tag = btn.dataset.tag;
+    if (selectedTags.has(tag)) { selectedTags.delete(tag); btn.classList.remove('selected'); }
+    else { selectedTags.add(tag); btn.classList.add('selected'); floatPoint(btn, '+3'); }
+    updateScore();
+  });
+});
+
+function floatPoint(el, text) {
+  const rect = el.getBoundingClientRect();
+  const div = document.createElement('div');
+  div.className = 'float-point'; div.textContent = text;
+  div.style.left = rect.left + rect.width/2 - 15 + 'px'; div.style.top = rect.top - 5 + 'px';
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 1200);
+}
+
+// ── RESULTS ──
+document.getElementById('btnSubmit').addEventListener('click', showResults);
+function showResults() {
+  clearInterval(timerInterval);
+  document.getElementById('game').classList.add('hidden');
+  document.getElementById('results').classList.add('show');
+
+  const maxPts = calcMaxPossible();
+  const timeBonus = calcTimeBonus(elapsedSeconds);
+  const finalScore = score + timeBonus;
+  const pct = maxPts > 0 ? Math.round((finalScore / (maxPts + 25)) * 100) : 0;
+
+  document.getElementById('maxPossible').textContent = maxPts;
+  const m = Math.floor(elapsedSeconds / 60), s = elapsedSeconds % 60;
+  document.getElementById('resultTime').textContent = `Completed in ${m}:${s.toString().padStart(2,'0')}`;
+  document.getElementById('playerBadge').textContent = `Salesperson: ${playerNameInput.value.trim()}`;
+  document.getElementById('resultPlayerName').textContent = playerNameInput.value.trim();
+
+  let current = 0;
+  const step = Math.max(1, Math.floor(finalScore / 40));
+  const countInterval = setInterval(() => {
+    current = Math.min(current + step, finalScore);
+    document.getElementById('finalScore').textContent = current;
+    document.getElementById('scoreCircle').style.setProperty('--pct', (maxPts + 25) > 0 ? Math.round((current / (maxPts + 25)) * 100) : 0);
+    if (current >= finalScore) { clearInterval(countInterval); document.getElementById('finalScore').textContent = finalScore; document.getElementById('scoreCircle').style.setProperty('--pct', pct); }
+  }, 30);
+
+  const rankEl = document.getElementById('rankTitle');
+  const rankTitle = pct >= 90 ? '🏆 Discovery Master' : pct >= 70 ? '⭐ Discovery Pro' : pct >= 45 ? '👍 Solid Discovery' : '🌱 Keep Digging!';
+  const rankClass = pct >= 90 ? 'rank-master' : pct >= 70 ? 'rank-pro' : pct >= 45 ? 'rank-solid' : 'rank-rookie';
+  rankEl.textContent = rankTitle;
+  rankEl.className = 'results-rank ' + rankClass;
+
+  const sections = [
+    { key:'customer', label:'Customer Info' },
+    { key:'vehicle', label:'Vehicle of Interest' },
+    { key:'motivation', label:'Motivation' },
+    { key:'trade', label: tradeOn ? 'Trade-In Discovery' : 'Recent Vehicle Experience' },
+    { key:'lifestyle', label:'Lifestyle Tags' },
+    { key:'priorities', label: hasStock ? 'What Else Matters' : 'Next Vehicle Priorities' },
+    { key:'decision', label:'Decision Makers' },
+    { key:'contact', label:'Contact Info' },
+  ];
+  let html = '<h3>Score Breakdown</h3>';
+  sections.forEach((sec, i) => {
+    let secPts = 0;
+    if (sec.key === 'lifestyle') { secPts = selectedTags.size * 3; }
+    else {
+      Object.entries(fieldScores).forEach(([f, pts]) => {
+        if (!isFieldActive(f)) return;
+        if (sec.key === 'customer' && f === 'customerName') secPts += pts;
+        else if (sec.key === 'vehicle' && ['stockNum','vehYear','vehMake','vehModel'].includes(f)) secPts += pts;
+        else if (sec.key === 'motivation' && ['motivation','motivationStock'].includes(f)) secPts += pts;
+        else if (sec.key === 'trade' && (TRADE_ON_FIELDS.includes(f) || TRADE_OFF_FIELDS.includes(f))) secPts += pts;
+        else if (sec.key === 'priorities' && ['mustHaves','otherNotes','stockMustHaves','stockConcerns'].includes(f)) secPts += pts;
+        else if (sec.key === 'decision' && ['primaryDriver','otherDeciders'].includes(f)) secPts += pts;
+        else if (sec.key === 'contact' && ['phone','email'].includes(f)) secPts += pts;
+      });
+    }
+    html += `<div class="breakdown-item" style="animation:slideIn .3s ease ${i*.08}s both"><span class="breakdown-label">${sec.label}</span><span class="breakdown-pts ${secPts===0?'zero':''}">+${secPts}</span></div>`;
+  });
+
+  // Detail bonuses
+  const detailBonuses = [];
+  document.querySelectorAll('[data-bonus="detail"]').forEach(el => {
+    const field = el.dataset.field;
+    if (!isFieldActive(field)) return;
+    if (el.value.trim().length >= 40) {
+      const base = parseInt(el.dataset.points) || 0;
+      const bonus = calcFieldPoints(el) - base;
+      if (bonus > 0) {
+        const label = el.closest('.field')?.querySelector('label')?.textContent?.replace(/\(.*?\)/g,'').trim() || field;
+        detailBonuses.push({ label, bonus });
+      }
+    }
+  });
+  if (detailBonuses.length > 0) {
+    html += '<div class="bonus-section"><h3>Detail Bonuses</h3>';
+    detailBonuses.forEach((b, i) => {
+      html += `<div class="breakdown-item" style="animation:slideIn .3s ease ${(sections.length+i)*.08}s both"><span class="breakdown-label">${b.label}</span><span class="breakdown-pts" style="color:var(--accent)">+${b.bonus}</span></div>`;
+    });
+    html += '</div>';
+  }
+
+  // Time bonus section
+  if (timeBonus > 0) {
+    html += `<div class="bonus-section"><h3>Speed Bonus</h3><div class="breakdown-item" style="animation:slideIn .3s ease ${(sections.length + detailBonuses.length)*.08}s both"><span class="breakdown-label">⏱ Finished in ${m}:${s.toString().padStart(2,'0')}</span><span class="breakdown-pts" style="color:var(--accent)">+${timeBonus}</span></div></div>`;
+  }
+
+  document.getElementById('breakdown').innerHTML = html;
+
+  // Store score data for leaderboard sharing
+  window.lastScore = {
+    name: playerNameInput.value.trim(),
+    score: finalScore,
+    time: elapsedSeconds,
+    rank: rankTitle.replace(/[🏆⭐👍🌱]/g, '').trim()
+  };
+}
+
+// ── COPY SCORE BUTTON ──
+document.getElementById('btnCopyScore').addEventListener('click', () => {
+  if (!window.lastScore) return;
+  const { name, score, time, rank } = window.lastScore;
+  const m = Math.floor(time / 60), s = time % 60;
+  const text = `${name} — ${score} pts - ${m}:${s.toString().padStart(2,'0')} - ${rank}`;
+  navigator.clipboard.writeText(text).then(() => {
+    showCopyToast('Copied to clipboard!');
+  });
+});
+
+function showCopyToast(msg) {
+  const toast = document.createElement('div');
+  toast.className = 'copy-toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2000);
+}
+
+document.getElementById('btnRestart').addEventListener('click', () => { location.reload(); });
+
+// ── LEADERBOARD (FACILITATOR MODE) ──
+function initLeaderboard() {
+  const nameInput = document.getElementById('leaderboardName');
+  const scoreInput = document.getElementById('leaderboardScore');
+  const btnAdd = document.getElementById('btnAddScore');
+  const btnClear = document.getElementById('btnClearScores');
+
+  // Generate QR code pointing to player URL (without ?host=true)
+  const playerUrl = window.location.origin + window.location.pathname;
+  const qrContainer = document.getElementById('qrCanvas');
+  const qrUrlDisplay = document.getElementById('qrUrl');
+  if (qrContainer && typeof QRCode !== 'undefined') {
+    new QRCode(qrContainer, {
+      text: playerUrl,
+      width: 220,
+      height: 220,
+      colorDark: '#c8102e',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+    qrUrlDisplay.textContent = playerUrl;
+  }
+
+  loadLeaderboard();
+
+  btnAdd.addEventListener('click', () => {
+    const name = nameInput.value.trim();
+    const scoreVal = parseInt(scoreInput.value);
+    if (name && !isNaN(scoreVal) && scoreVal >= 0) {
+      addScoreToLeaderboard(name, scoreVal);
+      nameInput.value = '';
+      scoreInput.value = '';
+      nameInput.focus();
+    }
+  });
+
+  nameInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') scoreInput.focus();
+  });
+
+  scoreInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') btnAdd.click();
+  });
+
+  btnClear.addEventListener('click', () => {
+    if (confirm('Clear all scores? This cannot be undone.')) {
+      localStorage.removeItem('discoveryLeaderboard');
+      loadLeaderboard();
+    }
+  });
+}
+
+function addScoreToLeaderboard(name, scoreVal) {
+  let scores = JSON.parse(localStorage.getItem('discoveryLeaderboard') || '[]');
+  scores.push({ name, score: scoreVal, timestamp: Date.now() });
+  scores.sort((a, b) => b.score - a.score);
+  localStorage.setItem('discoveryLeaderboard', JSON.stringify(scores));
+  loadLeaderboard();
+}
+
+function loadLeaderboard() {
+  const scores = JSON.parse(localStorage.getItem('discoveryLeaderboard') || '[]');
+  const list = document.getElementById('leaderboardList');
+
+  if (scores.length === 0) {
+    list.innerHTML = '<div class="leaderboard-empty">No scores yet. Start adding players!</div>';
+    return;
+  }
+
+  let html = '';
+  scores.forEach((entry, idx) => {
+    let medalClass = '';
+    let medalEmoji = `${idx + 1}.`;
+    if (idx === 0) { medalClass = 'gold'; medalEmoji = '🥇'; }
+    else if (idx === 1) { medalClass = 'silver'; medalEmoji = '🥈'; }
+    else if (idx === 2) { medalClass = 'bronze'; medalEmoji = '🥉'; }
+
+    const rankTitle = getRankTitle(entry.score);
+    html += `
+      <div class="leaderboard-row">
+        <div class="leaderboard-rank ${medalClass}">${medalEmoji}</div>
+        <div class="leaderboard-info">
+          <div class="leaderboard-name">${entry.name}</div>
+          <div class="leaderboard-title">${rankTitle}</div>
+        </div>
+        <div class="leaderboard-score">${entry.score}</div>
+      </div>
+    `;
+  });
+  list.innerHTML = html;
+}
+
+function getRankTitle(score) {
+  if (score >= 90) return '🏆 Discovery Master';
+  if (score >= 70) return '⭐ Discovery Pro';
+  if (score >= 45) return '👍 Solid Discovery';
+  return '🌱 Keep Digging!';
+}
+</script>
+</body>
+</html>
